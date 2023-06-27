@@ -12,7 +12,7 @@
         </div>
         <div class="product_details">
             <div class="product_image">
-                <div class="main_product">
+                <div class="main_product" @click="showImagePopup(product.mainImage)">
                     <img :src="product.mainImage" />
                 </div>
             <div class="product_preview">
@@ -23,7 +23,7 @@
             </div>
             <div class="product_description">
                 <div class="product_topic">
-                    <p class="text-capitalize">{{  product.name }}</p>
+                    <p class="block">{{  product.name }}</p>
                     <small>Original</small>
                 </div>
                 <div class="main_description">
@@ -31,29 +31,22 @@
                         "{{ product.description }}"
                     </p>
                     <div class="description_price">
-                        <p class="price">&#8358;{{ product.price }}</p>
+                        <p class="price">{{ formatPrice(product.price) }}</p>
                         <router-link v-if="product.printedVersion" :to="`/print/${product.printedVersion._id}`">Take me to the print instead</router-link>
 
                     </div>
                     <p class="sm-p">Size: {{ product.dimensions.width }} X {{ product.dimensions.height }}</p>
 
-                    <button v-if="!product.soldOut" style="cursor: pointer;" @click="addToCart(product)">Add to Cart</button>
-                    <button v-else style="cursor: not-allowed; opacity: .5;" disabled >Sold Out</button>
+                    <button class="original_button" v-if="!product.soldOut" style="cursor: pointer;" @click="addToCart(product)">Add to Cart</button>
+                    <button class="original_button" v-else style="cursor: not-allowed; opacity: .5;" disabled >Sold Out</button>
                     <p style="margin: 15px 0; color: red;" v-if="messageStatus">{{ message }}</p>
                 </div>
             </div>
+            
         </div>
     </section>
 
-    <!-- Orignal Prints Ends Here     -->
-
-    <!-- Contact Section Starts Here -->
-    <!-- <ContactSegment/> -->
-
-    <!-- Contact Section Ends -->
-
-    <!-- Behind The Scene Section Starts Here -->
-    <!-- <BehindTheScenes/> -->
+    <MainImageDisplay v-if="showPopup" :image="popupImage" @close="hideImagePopup" />
 </template>
 
 <script>
@@ -62,6 +55,7 @@ import ContactSegment from '../components/ContactSegment.vue';
 import BehindTheScenes from '../components/BehindTheScenes.vue';
 import Navbar from '../components/Navbar.vue';
 import popup from '../components/popup.vue';
+import MainImageDisplay from '../components/MainImageDisplay.vue';
 // import ViewImage from '../components/imageDisplay.vue'
 export default {
     name : 'OriginalDetail',
@@ -70,11 +64,12 @@ export default {
             product : '',
             cartData : [],
             messageStatus : false,
-            message : ''
+            message : '',
+            showPopup:false
         }
     },
     components : {
-        Navbar, ContactSegment, BehindTheScenes, popup
+        Navbar, ContactSegment, BehindTheScenes, popup, MainImageDisplay
     },
     created () {
         this.getProduct()
@@ -91,12 +86,50 @@ export default {
             this.$store.dispatch('addToCart', selectedProd)
             
         },
+        showImagePopup(image){
+            this.popupImage = image;
+            this.showPopup = true
+        },
+        hideImagePopup() {
+            this.showPopup = false;
+        },
         async getProduct(){
             const prodId = this.$route.params.id
-            const product = await axios.get(`http://localhost:7000/api/product/get-product/${prodId}`)
+            const product = await axios.get(`https://server.7thcreator.com/api/product/get-product/${prodId}`)
             this.product = product.data
             console.log(product);
-        }
+        },
+        formatPrice(price){
+       
+       const numericPrice = Number(price);
+       
+     
+       if (isNaN(numericPrice)) {
+         return "";
+       }
+       
+       // Format the price with comma separators
+       const formattedPrice = numericPrice.toLocaleString("en-NG", {
+         style: "currency",
+         currency: "NGN"
+       });
+       
+       // Return the formatted price with the Naira sign
+       return formattedPrice.replace("NGN", "₦");
+     }
     }
 }
 </script>
+<style  scoped>
+    .block{
+        font-style: normal !important;
+        text-transform: uppercase;
+    }
+    .original_button{
+        padding: 10px 15px !important;
+        height: fit-content;
+    }
+    .main_product{
+        cursor:pointer
+    }
+</style>
